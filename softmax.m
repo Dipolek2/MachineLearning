@@ -1,11 +1,12 @@
-function loss = softmax(Weights,x,bias,score)
-score=classBelongingProb(Weights,x,bias);
+function probability = softmax(Weights,img,bias)
+score=classBelongingProb(Weights,img,bias);
 
 %trick for better numeric stability
-score-=max(score);
-for i=1:10
-  score(i)=exp(score(i));
-  end
+%first scale scores to range <-1,1>
+score/=max(score);
+score=exp(score);
+
+%divide each score by sum of scores
 acc=sum(score);
-loss=score./acc;
+probability=score./acc;
 end

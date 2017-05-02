@@ -8,90 +8,123 @@ img = cifar10load();
 %create model
 %x=zeros(32*32);
 Weights=rand([10,3072],'double');
-Weights=Weights.-0.5;
+Weights=Weights.*0.001;
 bias=rand([10,1],'double');
-bias=bias-0.5;
+bias=bias.*0.001;
 
-SIZE_OF_TRAINING_DATA=100;
-TRAINING_STEPS=100;
+SIZE_OF_TRAINING_DATA=1;
+TRAINING_STEPS=5;
+REG=0.001;
 
 loss=zeros(SIZE_OF_TRAINING_DATA,10);
 accuracy=zeros(SIZE_OF_TRAINING_DATA,1);
 gradWeights=zeros(10,3072);
 newWeights=zeros(10,3072);
-learningRate=power(10,-8);
+learningRate=power(10,-6);
 
 delta=zeros(SIZE_OF_TRAINING_DATA,TRAINING_STEPS);
 
 %show random weights as image
-S1=visualizeWeight(Weights(1,:));
-image(S1);
-title("Random weight");
+%S1=visualizeWeight(Weights(1,:));
+%image(S1);
+%title("Random weight");
 
 %compute loss before training
-loss=SVMlossVect(Weights,img,bias);
+%loss=SVMlossVect(Weights,img,bias);
+prob=softmaxVect(Weights,img,bias);
+prob(1,:)'
+
+dataLoss=sum(-log2(prob))/SIZE_OF_TRAINING_DATA;
+regLoss=0.5*REG*sum(sum(Weights.*Weights));
+loss=dataLoss+regLoss;
+
 %printf("Original loss= %f\n", loss);
 %loss(1:SIZE_OF_TRAINING_DATA)
 
+oldWeights=Weights;
 %train weights at each image
 for i=1:SIZE_OF_TRAINING_DATA
   %compute loss with updated weights
-  loss(i)=SVMloss(Weights,bias,img{i}.image,img{i}.label);
+  %loss(i)=SVMloss(Weights,bias,img{i}.image,img{i}.label);
+  loss(i,:)=softmax(Weights,img{i}.image,bias);
   
   %traing each image TRAINIG_STEPS times
   for j=1:TRAINING_STEPS
   
     %set learningRate and compute calculus
-    calc=calculus(Weights,img{i}.image,img{i}.label,bias);
+    %calc=calculus(Weights,bias,img{i}.image, img{i}.label);
+    p=softmax(Weights,img{i}.image,bias);
+    calc=-log2(p);
     
-    %compute gradients of weights' rows
+    %experimental backpropagation
     
-    %for k=1:10
-    %  gradWeights(k)=sum(double(Weights(k,:)).*calc(k));
-    %  end
+    %over each image example
+    %dscores=softmax(Weights, img{i}.image, bias);
+    %dscores(img{i}.label)-=1;
+    
+    %dscores/=SIZE_OF_TRAINING_DATA;
+    
+    %dW=Weights'*dscores;
+    %dW=dW';
+    %dB=sum(dscores);
+    %dW=dW.+Weights.*REG;
     
     
-    %each class weights multiply by calculus
-    %gradWeights=double(Weights).*calc;
+    %experimental backpropagation
     
-    %label class: - sum over all classes calculus except label calss multiply by label class weights
-    %gradWeights(img{i}.label,:)=-((double(Weights(img{i}.label))).*(sum(calc)-calc(img{i}.label)));
+    %compute gradients of weights' rows and biases
     imageVector=img{i}.image';
+    
     for k=1:10
       if(k != img{i}.label)
         gradWeights(k,:)=imageVector.*calc(k);
+        gradBias(k)=bias(k).*calc(k);
       else
-        gradWeights(k,:)=imageVector.*-(sum(calc)-calc(k));
+        gradWeights(k,:)=imageVector.*(-(sum(calc)-calc(k)));
+        gradBias(k)=bias(k).*(-sum(calc)-calc(k));
         endif
       end
   
+    %softmax
+    %gradWeights=imageVector.*calc;  
+  
     gradWeights=gradWeights.*learningRate;
+    gradBias=gradBias.*learningRate;
      
     %update weights 
-    
-    %for k=1:10
-    %  if(k != img{i}.label)
-    %    newWeights(k,:)=Weights(k,:).-gradWeights(k);
-    %    endif
-    %  end
-    
     newWeights=Weights.-gradWeights;
+    newBias=bias.-gradBias;
+    %compute regularized loss with updated weights  
     
-    %compute loss with updated weights  
-    newLoss=SVMloss(newWeights,bias,img{i}.image,img{i}.label);
+    %SVM
+    %newLoss=SVMloss(newWeights,bias,img{i}.image,img{i}.label);
+    
+    %softmax
+    newProb=softmax(newWeights,img{i}.image,newBias);
+    newDataLoss=sum(-log2(newProb(img{i}.label)))/SIZE_OF_TRAINING_DATA;
+    newRegLoss=0.5*REG*sum(sum(Weights.*Weights));
+    newLoss=newDataLoss+newRegLoss
+    
     Weights=newWeights;
+    bias=newBias;
+    
+    prob=softmaxVect(Weights,img,bias);
+    prob(1,:)';
+    loss=-log2(prob);
     
     %update training progress
-    delta(i,j)=loss(i)-newLoss;
+    %delta(i,j)=loss(i)-newLoss;
     end
+    img{i}.label;
+    s=softmax(Weights,img{i}.image,bias);
+    
   end
-disp(delta(1:SIZE_OF_TRAINING_DATA,TRAINING_STEPS))
-loss2=SVMlossVect(Weights,img,bias);
-delta2=loss-loss2;
+%disp(delta(1:SIZE_OF_TRAINING_DATA,TRAINING_STEPS))
+%loss2=-log2(softmaxVect(Weights,img,bias));
+%delta2=loss-loss2;
 
-S2=visualizeWeight(Weights(1,:));
-image(S2);
-title("Trained weight");
-%loss=SVMloss(img{1},score);
-%gradient(softmax(Weights,x,bias),[Weights,bias]);
-%y=sum(W.*x)+b;
+z=softmaxVect(Weights,img,bias);
+z(1,:)'
+%S2=visualizeWeight(Weights(1,:));
+%image(S2);
+%title("Trained weight");

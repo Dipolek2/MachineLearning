@@ -4,7 +4,7 @@ score=zeros(10,1);
 
 %multiply each pixel with it's weight
 for i=1:10
-  score(i)+=Weights(i,:)*double(x);
+  score(i)+=double(Weights(i,:))*double(x);
   end
-score+=bias;
+score=score+bias;
 end
