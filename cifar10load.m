@@ -1,17 +1,21 @@
-function imgArray = cifar10load()
+function [img,label] = cifar10load()
 %in load function set path to your cifar10 files
 f1=load('data_batch_1.mat');
 f2=load('data_batch_2.mat');
 f3=load('data_batch_3.mat');
 f4=load('data_batch_4.mat');
 f5=load('data_batch_5.mat');
-%length(f1.data)
+
+SIZE=10;
 
 imgData=[f1.data;f2.data;f3.data;f4.data;f5.data];
 labData=[f1.labels;f2.labels;f3.labels;f4.labels;f5.labels]+1;
 
+img=zeros(SIZE,3072);
+label=zeros(SIZE,1);
+
   %read 50000 test images
-for i=1:100%length(f1.data)
+for i=1:SIZE%length(f1.data)
   
   %images are 32x32x3 arrays
   %images are saved as vectors of channels values
@@ -41,7 +45,8 @@ for i=1:100%length(f1.data)
     S=imgData((j-1)*i+i,:);
     S=S';
     
-    imgArray{i+i*(j-1)}=struct('image', S, 'label', labData((j-1)*i+i));
+    img(i,:)=S;
+    label(i)=labData((j-1)*i+i);
     end
   end
 end
