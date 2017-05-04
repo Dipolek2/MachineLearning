@@ -6,7 +6,7 @@ SIZE_OF_NETWORK=100;
 CLASSES=10;
 TRAINING_STEP=2000;
 REG=0.001;
-learningRate=power(10,-3);
+learningRate=power(10,-5);
 
 %create model
 %first layer
