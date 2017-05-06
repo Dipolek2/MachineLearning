@@ -1,26 +1,29 @@
-[img,label] = cifar10load();
+%[img,label,testImg,testLabel] = cifar10load();
+[img,label,testImg,testLabel] = loadMNIST();
+
+DATA_SIZE=28*28;
 
 %hyperparameters
-SIZE_OF_TRAINING_DATA=10;
-SIZE_OF_NETWORK=100;
+SIZE_OF_TRAINING_DATA=2000;
+SIZE_OF_NETWORK=800;
 CLASSES=10;
-TRAINING_STEP=2000;
-REG=0.001;
-learningRate=power(10,-5);
+TRAINING_STEP=20;
+REG=power(10,0);
+K=power(10,0);
+learningRate=power(10,-1);
+
 
 %create model
 %first layer
-Weights=rand([3072,SIZE_OF_NETWORK],'double');
-Weights=Weights.*REG;
-bias=rand([SIZE_OF_TRAINING_DATA,SIZE_OF_NETWORK],'double');
-bias=bias.*REG;
+Weights=randn([DATA_SIZE,SIZE_OF_NETWORK],'double').*sqrt(2.0/SIZE_OF_NETWORK);
+Weights=Weights.*K;
+bias=zeros([SIZE_OF_TRAINING_DATA,SIZE_OF_NETWORK],'double').*sqrt(2.0/SIZE_OF_NETWORK);
 
 
 %model of hidden layer
-hiddenWeights=rand([SIZE_OF_NETWORK,CLASSES],'double');
-hiddenWeights=hiddenWeights.*REG;
-hiddenBias=rand([SIZE_OF_TRAINING_DATA,CLASSES],'double');
-hiddenBias=hiddenBias.*REG;
+hiddenWeights=randn([SIZE_OF_NETWORK,CLASSES],'double').*sqrt(2.0/CLASSES);
+hiddenWeights=hiddenWeights.*K;
+hiddenBias=zeros([SIZE_OF_TRAINING_DATA,CLASSES],'double').*sqrt(2.0/CLASSES);
 
 %train weights at each image parallel
 
@@ -51,19 +54,19 @@ for j=1:TRAINING_STEP
     end
       
   %overall loss
-  data_loss=0;
+  data_loss=0.0;
+  delta=power(10,-10);
   for l=1:SIZE_OF_TRAINING_DATA
-    data_loss+=-log(probs(l, label(l)));
+    data_loss+=-log(probs(l, label(l))+delta);
     end
   data_loss/=SIZE_OF_TRAINING_DATA;
-    
   %data_loss=sum(sum(-log(probs')));
-  %reg_loss=0.5*REG*sum(sum(Weights.*Weights))+0.5*REG*sum(sum(hiddenWeights.*hiddenWeights));
-  %loss=data_loss+reg_loss;
+  %reg_loss=0.5*REG*sum(Weights*Weights')+0.5*REG*sum(hiddenWeights*hiddenWeights');
+  %loss=data_loss+reg_loss
     
   loss=data_loss;
-  if(mod(j,100)==0)
-    printf("loss %.5f\n",loss);
+  if(mod(j,5)==0)
+    printf("loss %f\n",loss);
     endif
     
     
@@ -80,13 +83,14 @@ for j=1:TRAINING_STEP
   dHiddenBias=sum(dscores);
     
     
-  %[3072,10] backpropagate to first layer
+  %[DATA_SIZE,10] backpropagate to first layer
   dHidden=dscores*hiddenWeights';
+
 
   %non linearity ReLU
   %crucial part; all 'magic' happens here
   for l=1:size(dHidden)
-    for k=1:SIZE_OF_TRAINING_DATA
+    for k=1:SIZE_OF_NETWORK
       if(hidden(l,k)<=0)
         dHidden(l,k)=0;
         endif
@@ -108,22 +112,39 @@ for j=1:TRAINING_STEP
   end
     
 %check accuracy after training
-hidden=max(0,linearMultiplication(Weights,img,bias));
+hidden=max(0,linearMultiplication(Weights,double(testImg),bias));
 score=linearMultiplication(hiddenWeights,hidden,hiddenBias);
 probs=zeros(SIZE_OF_TRAINING_DATA,CLASSES);
 for l=1:SIZE_OF_TRAINING_DATA
   score(l,:)-=min(score(l,:));
   probs(l,:)=score(l,:)/sum(score(l,:));
   end
-label';
 probs=probs';
 
 %accuracy
 acc=0;
 for l=1:SIZE_OF_TRAINING_DATA
-  if(probs(label(l),l) == max(probs(:,l)))
+  if(probs(testLabel(l),l) == max(probs(:,l)))
     acc+=1;  
     endif
   end
-precision=acc*100/SIZE_OF_TRAINING_DATA;
+precision=double(acc*100/SIZE_OF_TRAINING_DATA);
 printf("Precision %2.2f%%\n",precision);
+
+%show classificated images with predictions
+%dispImg=zeros([28,28,3],'double');
+
+%p=zeros([28;28],'uint8');
+%for l=1:SIZE_OF_TRAINING_DATA
+%  for j=1:28
+%    p(j,:)=testImg(l,1+(j-1)*28:j*28);
+%    end
+%  p=p';
+  
+  %dispImg(:,:,1)=p;
+  %dispImg(:,:,2)=p;
+  %dispImg(:,:,3)=p;
+  %image(dispImg)
+  %title("Predicted class: ",testLabel(l)-1);
+  %pause(0.5);
+  %end

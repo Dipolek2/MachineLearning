@@ -1,18 +1,28 @@
-function [img,label] = cifar10load()
+function [trainImg,trainLabel,testImg,testLabel] = cifar10load()
 %in load function set path to your cifar10 files
-f1=load('data_batch_1.mat');
-f2=load('data_batch_2.mat');
-f3=load('data_batch_3.mat');
-f4=load('data_batch_4.mat');
-f5=load('data_batch_5.mat');
+f1=load('data/data_batch_1.mat');
+f2=load('data/data_batch_2.mat');
+f3=load('data/data_batch_3.mat');
+f4=load('data/data_batch_4.mat');
+f5=load('data/data_batch_5.mat');
 
-SIZE=10;
+f6=load('data/test_batch.mat');
+
+SIZE=200;
+
+
 
 imgData=[f1.data;f2.data;f3.data;f4.data;f5.data];
 labData=[f1.labels;f2.labels;f3.labels;f4.labels;f5.labels]+1;
 
-img=zeros(SIZE,3072);
-label=zeros(SIZE,1);
+trainImg=zeros(SIZE,3072);
+trainLabel=zeros(SIZE,1);
+
+testImg=[f6.data];
+testImg=testImg(1:SIZE,:);
+
+testLabel=[f6.labels]+1;
+testLabel=testLabel(1:SIZE,:);
 
   %read 50000 test images
 for i=1:SIZE%length(f1.data)
@@ -45,8 +55,8 @@ for i=1:SIZE%length(f1.data)
     S=imgData((j-1)*i+i,:);
     S=S';
     
-    img(i,:)=S;
-    label(i)=labData((j-1)*i+i);
+    trainImg(i,:)=S;
+    trainLabel(i,:)=labData((j-1)*i+i);
     end
   end
 end
