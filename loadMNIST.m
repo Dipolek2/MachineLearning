@@ -9,12 +9,12 @@ tLab=loadMNISTLabels('data/t10k-labels.idx1-ubyte');
 tImg=tImg';
 img=img';
 
-SIZE=2000;
-
+SIZE=50000;
+TEST_SIZE=10000;
 ima(1:SIZE,:)=img(1:SIZE,:);
 label(1:SIZE,:)=lab(1:SIZE,:)+1;
-testImg(1:SIZE,:)=tImg(1:SIZE,:);
-testLabel(1:SIZE,:)=tLab(1:SIZE,:)+1;
+testImg(1:TEST_SIZE,:)=tImg(1:TEST_SIZE,:);
+testLabel(1:TEST_SIZE,:)=tLab(1:TEST_SIZE,:)+1;
 
 %dispImg=zeros([28,28,3],'double');
 
