@@ -4,16 +4,17 @@
 DATA_SIZE=28*28;
 
 %hyperparameters
-SIZE_OF_TRAINING_DATA=10000;
-DATA_BATCH=1;
-SIZE_OF_NETWORK=100;
+SIZE_OF_DATA_BATCH=10000;
+SIZE_OF_TRAINING_DATA=1000;
+DATA_BATCH=2;
+SIZE_OF_NETWORK=80;
 CLASSES=10;
 REG=power(10,0);
 K=power(10,0);
 learningRate=power(10,-2);
 EPOCHS=500;
 
-
+testImg=testImg(1:SIZE_OF_TRAINING_DATA,:);
 %create model
 %first layer
 Weights=randn([DATA_SIZE,SIZE_OF_NETWORK],'double').*sqrt(2.0/SIZE_OF_NETWORK);
@@ -28,7 +29,7 @@ hiddenBias=zeros([SIZE_OF_TRAINING_DATA,CLASSES],'double').*sqrt(2.0/CLASSES);
 
 %accuracy before training
 for i=1:DATA_BATCH
-  hidden=max(0,linearMultiplication(Weights,img((i-1)*SIZE_OF_TRAINING_DATA+1:(i*SIZE_OF_TRAINING_DATA),:),bias));
+  hidden=max(0,linearMultiplication(Weights,img((i-1)*SIZE_OF_DATA_BATCH+1:(i-1)*SIZE_OF_DATA_BATCH+SIZE_OF_TRAINING_DATA,:),bias));
   score=linearMultiplication(hiddenWeights,hidden,hiddenBias);
   probs=zeros(SIZE_OF_TRAINING_DATA,CLASSES);
   for l=1:SIZE_OF_TRAINING_DATA
@@ -50,13 +51,15 @@ maxIterations=0;
 %plot([1:SIZE_OF_TRAINING_DATA],0,'g')
 
 axis([0 EPOCHS 0 100]);
+xlabel("Iteracje");
+ylabel("Prezycja [%]");
 set(gca, "linewidth", 3, "fontsize", 12);
 
 while (precision(iterations) < 85.0 && iterations < EPOCHS)
 for i=1:DATA_BATCH
   %hidden layer
   %result is matrix [SIZE_OF_TRAINING_DATA,SIZE_OF_NETWORK]
-  hidden=max(0,linearMultiplication(Weights,img((i-1)*SIZE_OF_TRAINING_DATA+1:(i*SIZE_OF_TRAINING_DATA),:),bias));
+  hidden=max(0,linearMultiplication(Weights,img((i-1)*SIZE_OF_DATA_BATCH+1:(i-1)*SIZE_OF_DATA_BATCH+SIZE_OF_TRAINING_DATA,:),bias));
     
   %output layer
   score=linearMultiplication(hiddenWeights,hidden,hiddenBias);
@@ -80,14 +83,23 @@ for i=1:DATA_BATCH
   %data_loss=sum(sum(-log(probs')));
   %reg_loss=0.5*REG*sum(Weights*Weights')+0.5*REG*sum(hiddenWeights*hiddenWeights');
   %loss=data_loss+reg_loss
-  loss=data_loss;
-  if(mod(iterations,5)==0)
-    printf("loss %f\n",loss);
-    endif
+  
+  %loss(iterations)=data_loss;
+  %if(mod(iterations,5)==0)
+  %  printf("loss %f\n",loss);
+  %  endif
     
     
   %compute backpropagation
   %derivates of output; for right class it's negative number
+  
+  %Conjugate gradient
+  %
+  %Weights=conjgrad(score,bias,Weights);
+  %hiddenWeights=conjgrad(hidden,hiddenBias,hiddenWeights);
+  % 
+  %end Conjugate gradient
+  
   dscores=probs;
 
   for l=1:SIZE_OF_TRAINING_DATA
@@ -115,7 +127,7 @@ for i=1:DATA_BATCH
     end
       
   %derivates of first layer weights
-  dW=img((i-1)*SIZE_OF_TRAINING_DATA+1:(i*SIZE_OF_TRAINING_DATA),:)'*dHidden;
+  dW=img((i-1)*SIZE_OF_DATA_BATCH+1:(i-1)*SIZE_OF_DATA_BATCH+SIZE_OF_TRAINING_DATA,:)'*dHidden;
   dB=sum(dHidden);
     
   %update trainable variables
@@ -152,6 +164,8 @@ precision(iterations)=double(acc*100/SIZE_OF_TRAINING_DATA);
 plot([1:iterations],precision(1:iterations),"linewidth",3,'r');
 set(gca, "linewidth", 3, "fontsize", 12);
 axis([0 EPOCHS 0 100]);
+xlabel("Iteracje");
+ylabel("Prezycja [%]");
 drawnow;
 
 if(precision(iterations) > maxPrecision)
@@ -167,6 +181,7 @@ endwhile
 
 printf("MAXIterations: %d\n", maxIterations);
 printf("MAXPrecision %2.2f%%\n",maxPrecision);
+
 %show classificated images with predictions
 %dispImg=zeros([28,28,3],'double');
 %
